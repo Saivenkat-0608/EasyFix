@@ -1636,17 +1636,24 @@ async function doRegister() {
     const [firstName, ...rest] = name.split(' ');
     const lastName = rest.join(' ');
 
+    // Normalize phone to E.164 format Clerk expects (e.g. +919390238537)
+    let phoneE164 = phone.replace(/[\s-]/g, '');
+    if (phoneE164 && !phoneE164.startsWith('+')) {
+      phoneE164 = '+91' + phoneE164.replace(/^91/, '').replace(/^0/, '');
+    }
+
     const signUp = await clerk.client.signUp.create({
       emailAddress: email,
       password: pass,
       firstName,
-      lastName
+      lastName,
+      phoneNumber: phoneE164 || undefined
     });
 
     // Trigger Clerk's 6-digit email verification code
     await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
 
-    pendingReg = { name, email, phone, pass };
+    pendingReg = { name, email, phone: phoneE164, pass };
     document.getElementById('otp-email-display').textContent = email;
     authShow('otp');
 
@@ -1673,8 +1680,11 @@ async function doVerifyOtp() {
 
     if (result.status !== 'complete') {
       console.log('Clerk signUp result:', result);
-      const missing = result.missingFields?.length ? ` Missing: ${result.missingFields.join(', ')}.` : '';
-      throw new Error(`Verification incomplete (status: ${result.status}).${missing}`);
+      const missing = result.missingFields || [];
+      if (missing.includes('phone_number')) {
+        throw new Error('Your Clerk instance requires a phone number field that this form cannot satisfy automatically. Please go to Clerk Dashboard → Configure → User & Authentication → Email, Phone, Username and set Phone number to "Off" or "Optional", then try registering again.');
+      }
+      throw new Error(`Verification incomplete (status: ${result.status}).${missing.length ? ' Missing: ' + missing.join(', ') + '.' : ''}`);
     }
 
     // Activate the new session
@@ -1802,11 +1812,13 @@ async function doForgotPassword() {
 
 // ── LOGOUT ──
 async function doLogout() {
+  if (!confirm('Are you sure you want to logout?')) return;
   await clerkReady;
   await clerk.signOut();
   sessionStorage.removeItem('ef_token');
   sessionStorage.removeItem('ef_user');
   renderOrders();
+  showToast('👋 You have been logged out.');
 }
 
 // ── OLD submitLogin removed — replaced by doLogin above ──
