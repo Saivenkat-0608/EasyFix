@@ -1671,7 +1671,9 @@ async function doVerifyOtp() {
     const result = await clerk.client.signUp.attemptEmailAddressVerification({ code: otp });
 
     if (result.status !== 'complete') {
-      throw new Error('Verification incomplete. Please try again.');
+      console.log('Clerk signUp result:', result);
+      const missing = result.missingFields?.length ? ` Missing: ${result.missingFields.join(', ')}.` : '';
+      throw new Error(`Verification incomplete (status: ${result.status}).${missing}`);
     }
 
     // Activate the new session
@@ -1703,10 +1705,11 @@ async function doVerifyOtp() {
     const msg = (e?.errors?.[0]?.longMessage || e?.errors?.[0]?.message || e.message || '');
     if (msg.toLowerCase().includes('expired'))
       setAuthErr('otp-err', '❌ OTP has expired. Click "Resend OTP" to get a new one.');
-    else if (msg.toLowerCase().includes('incorrect') || msg.toLowerCase().includes('invalid'))
+    else if (msg.toLowerCase().includes('incorrect') || msg.toLowerCase().includes('invalid code'))
       setAuthErr('otp-err', '❌ Incorrect OTP. Please check your email and try again.');
     else
       setAuthErr('otp-err', '❌ ' + (msg || 'Verification failed. Please try again.'));
+    console.error('OTP verify error:', e);
   } finally {
     setBtnLoading('otp-btn', false, '<i class="fas fa-check-circle"></i> Verify & Continue');
   }
