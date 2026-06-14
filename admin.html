@@ -271,6 +271,20 @@ body { font-family: 'Inter', sans-serif; background: #f8fafc; color: var(--dark)
   font-size: 12px; font-weight: 500; background: var(--white); cursor: pointer; font-family: inherit;
 }
 
+/* ===== FORM (Shop product modal) ===== */
+.form-row { margin-bottom: 14px; }
+.form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.form-label { display: block; font-size: 12px; font-weight: 600; color: var(--gray); margin-bottom: 6px; }
+.form-input {
+  width: 100%; padding: 10px 12px; border-radius: 8px; border: 1.5px solid var(--gray-border);
+  font-size: 13px; font-family: inherit; outline: none; transition: border-color 0.2s; background: var(--white);
+}
+.form-input:focus { border-color: var(--blue); }
+.shop-thumb { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; background: var(--gray-light); }
+.tag-pill { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 20px; margin-right: 4px; }
+.tag-pill.new { background: var(--blue-light); color: var(--blue); }
+.tag-pill.offer { background: var(--orange-light); color: var(--orange); }
+
 /* ===== TOAST ===== */
 .toast {
   position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(60px);
@@ -353,6 +367,10 @@ body { font-family: 'Inter', sans-serif; background: #f8fafc; color: var(--dark)
   <div class="nav-item" onclick="showPage('products')">
     <i class="fas fa-box"></i><span>Products</span>
     <div class="nav-badge" id="productBadge">0</div>
+  </div>
+  <div class="nav-item" onclick="showPage('shop')">
+    <i class="fas fa-store"></i><span>Shop Products</span>
+    <div class="nav-badge" id="shopBadge">0</div>
   </div>
   <div class="nav-item" onclick="showPage('logins')">
     <i class="fas fa-users"></i><span>Users</span>
@@ -568,6 +586,31 @@ body { font-family: 'Inter', sans-serif; background: #f8fafc; color: var(--dark)
       </div>
     </div>
 
+    <!-- ===== SHOP PRODUCTS PAGE ===== -->
+    <div id="page-shop" style="display:none">
+      <div class="section-card">
+        <div class="section-card-header">
+          <i class="fas fa-store" style="color:var(--green)"></i>
+          <h3>Shop Products</h3>
+          <div class="count-pill" id="shopCountPill">0</div>
+          <div class="ml">
+            <div class="search-bar"><i class="fas fa-search"></i><input type="text" id="shopSearch" placeholder="Search..." oninput="filterTable('shop')"></div>
+            <button class="topbar-btn primary" onclick="openShopModal()"><i class="fas fa-plus"></i> Add Product</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Image</th><th>Name</th><th>Category</th><th>Price</th><th>Tags</th><th>Status</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="shopTable"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
     <!-- ===== LOGINS PAGE ===== -->
     <div id="page-logins" style="display:none">
       <div class="section-card">
@@ -607,6 +650,69 @@ body { font-family: 'Inter', sans-serif; background: #f8fafc; color: var(--dark)
   </div>
 </div>
 
+<!-- SHOP PRODUCT ADD/EDIT MODAL -->
+<div class="modal-overlay" id="shopModal">
+  <div class="modal-box">
+    <div class="modal-box-header">
+      <h3 id="shopModalTitle">Add Product</h3>
+      <button class="modal-x" onclick="closeShopModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-box-body">
+      <input type="hidden" id="shopId">
+      <div class="form-row">
+        <label class="form-label">Product Name</label>
+        <input type="text" id="shopName" class="form-input" placeholder="e.g. Cordless Drill Machine 18V">
+      </div>
+      <div class="form-row form-row-2">
+        <div>
+          <label class="form-label">Price (₹)</label>
+          <input type="number" id="shopPrice" class="form-input" placeholder="3499">
+        </div>
+        <div>
+          <label class="form-label">Original Price (₹) — optional</label>
+          <input type="number" id="shopOriginalPrice" class="form-input" placeholder="4299">
+        </div>
+      </div>
+      <div class="form-row">
+        <label class="form-label">Category</label>
+        <input type="text" id="shopCategory" class="form-input" placeholder="e.g. Power Tools">
+      </div>
+      <div class="form-row">
+        <label class="form-label">Image URL</label>
+        <input type="text" id="shopImage" class="form-input" placeholder="https://...">
+      </div>
+      <div class="form-row">
+        <label class="form-label">WhatsApp Number (for Enquire Now) — optional</label>
+        <input type="text" id="shopWaNum" class="form-input" placeholder="919390238537">
+      </div>
+      <div class="form-row form-row-2">
+        <div>
+          <label class="form-label">Stock Status</label>
+          <select id="shopStatus" class="form-input">
+            <option value="instock">In Stock</option>
+            <option value="outofstock">Out of Stock</option>
+          </select>
+        </div>
+        <div>
+          <label class="form-label">Tags</label>
+          <div style="display:flex;gap:16px;align-items:center;height:42px;">
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;cursor:pointer;">
+              <input type="checkbox" id="shopIsNew" style="width:16px;height:16px;"> New
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;cursor:pointer;">
+              <input type="checkbox" id="shopIsOffer" style="width:16px;height:16px;"> Offer
+            </label>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:8px;display:flex;gap:10px;">
+        <button class="topbar-btn primary" style="flex:1;justify-content:center;padding:12px" onclick="saveShopProduct()"><i class="fas fa-save"></i> Save Product</button>
+        <button class="topbar-btn" style="padding:12px 18px" onclick="closeShopModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -616,10 +722,10 @@ const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 const SB_HEADERS = { 'apikey': SB_KEY, 'Authorization': 'Bearer ' + SB_KEY, 'Content-Type': 'application/json', 'Prefer': 'return=representation' };
 
 // Table name mapping
-const TABLE_MAP = { bookings: 'bookings', franchise: 'franchise', contacts: 'contacts', products: 'products', logins: 'logins' };
+const TABLE_MAP = { bookings: 'bookings', franchise: 'franchise', contacts: 'contacts', products: 'products', logins: 'logins', shop: 'shop_products' };
 
 // In-memory cache
-let cache = { bookings: [], franchise: [], contacts: [], products: [], logins: [] };
+let cache = { bookings: [], franchise: [], contacts: [], products: [], logins: [], shop: [] };
 
 async function sbFetch(table, method='GET', body=null, query='') {
   const res = await fetch(`${SB_URL}/${table}${query}`, {
@@ -631,18 +737,20 @@ async function sbFetch(table, method='GET', body=null, query='') {
 
 async function loadAll() {
   try {
-    const [bookings, franchise, contacts, products, logins] = await Promise.all([
+    const [bookings, franchise, contacts, products, logins, shop] = await Promise.all([
       sbFetch('bookings', 'GET', null, '?order=created_at.desc'),
       sbFetch('franchise', 'GET', null, '?order=created_at.desc'),
       sbFetch('contacts', 'GET', null, '?order=created_at.desc'),
       sbFetch('products', 'GET', null, '?order=created_at.desc'),
       sbFetch('logins', 'GET', null, '?order=created_at.desc'),
+      sbFetch('shop_products', 'GET', null, '?order=created_at.desc').catch(() => []),
     ]);
     cache.bookings  = bookings  || [];
     cache.franchise = franchise || [];
     cache.contacts  = contacts  || [];
     cache.products  = products  || [];
     cache.logins    = logins    || [];
+    cache.shop      = shop      || [];
   } catch(e) { showToast('⚠️ Could not load data: ' + e.message); }
 }
 
@@ -690,8 +798,8 @@ async function deleteItem(type, id) {
 async function clearAllData() {
   if (!confirm('Clear ALL data from all tables? This cannot be undone.')) return;
   try {
-    await Promise.all(Object.values(TABLE_MAP).map(t => sbFetch(t, 'DELETE', null, '?id=neq.null')));
-    cache = { bookings: [], franchise: [], contacts: [], products: [], logins: [] };
+    await Promise.all(Object.values(TABLE_MAP).map(t => sbFetch(t, 'DELETE', null, '?id=neq.null').catch(()=>null)));
+    cache = { bookings: [], franchise: [], contacts: [], products: [], logins: [], shop: [] };
     renderPage(currentPage);
     updateBadges();
     showToast('All data cleared.');
@@ -711,11 +819,12 @@ function showPage(page) {
     franchise: ['Franchise Applications','All franchise enquiries'],
     contacts:  ['Contact Messages','Customer messages & queries'],
     products:  ['Product Listings','Seller product submissions'],
+    shop:      ['Shop Products','Catalog shown on the Products page'],
     logins:    ['User Registrations','Registered & logged-in users'],
   };
   document.getElementById('topbarTitle').textContent = titles[page][0];
   document.getElementById('topbarSub').textContent = titles[page][1];
-  document.querySelectorAll('.nav-item')[['dashboard','bookings','franchise','contacts','products','logins'].indexOf(page)]?.classList.add('active');
+  document.querySelectorAll('.nav-item')[['dashboard','bookings','franchise','contacts','products','shop','logins'].indexOf(page)]?.classList.add('active');
   currentPage = page;
   renderPage(page);
 }
@@ -732,6 +841,7 @@ function updateBadges() {
   document.getElementById('franchiseBadge').textContent = cache.franchise.length;
   document.getElementById('contactBadge').textContent   = cache.contacts.length;
   document.getElementById('productBadge').textContent   = cache.products.length;
+  document.getElementById('shopBadge').textContent      = cache.shop.length;
   document.getElementById('loginBadge').textContent     = cache.logins.length;
 }
 
@@ -742,6 +852,7 @@ function renderPage(page) {
   if (page === 'franchise')  renderFranchise(cache.franchise);
   if (page === 'contacts')   renderContacts(cache.contacts);
   if (page === 'products')   renderProducts(cache.products);
+  if (page === 'shop')       renderShop(cache.shop);
   if (page === 'logins')     renderLogins(cache.logins);
 }
 
@@ -933,7 +1044,109 @@ function renderProducts(data) {
   </tr>`).join('');
 }
 
-// ===== LOGINS TABLE =====
+// ===== SHOP PRODUCTS TABLE =====
+function renderShop(data) {
+  document.getElementById('shopCountPill').textContent = data.length;
+  const tb = document.getElementById('shopTable');
+  if (!data.length) { tb.innerHTML = `<tr><td colspan="7">${emptyState('store','No shop products yet. Click "Add Product" to create one.')}</td></tr>`; return; }
+  tb.innerHTML = data.map(p => `<tr>
+    <td>${p.image ? `<img class="shop-thumb" src="${esc(p.image)}" onerror="this.style.display='none'">` : '<div class="shop-thumb"></div>'}</td>
+    <td class="name-cell">${esc(p.name)}</td>
+    <td class="date-cell">${esc(p.category)||'—'}</td>
+    <td class="amount-cell">₹${Number(p.price||0).toLocaleString('en-IN')}${p.original_price ? ` <span style="color:#94a3b8;text-decoration:line-through;font-weight:400;font-size:11px">₹${Number(p.original_price).toLocaleString('en-IN')}</span>` : ''}</td>
+    <td>${p.is_new ? '<span class="tag-pill new">New</span>' : ''}${p.is_offer ? '<span class="tag-pill offer">Offer</span>' : ''}${!p.is_new && !p.is_offer ? '—' : ''}</td>
+    <td>
+      <select class="status-select" onchange="updateStatus('shop','${p.id}',this.value)">
+        ${['instock','outofstock'].map(s => `<option value="${s}"${p.status===s?' selected':''}>${s==='instock'?'In Stock':'Out of Stock'}</option>`).join('')}
+      </select>
+    </td>
+    <td>
+      <div class="actions-cell">
+        <button class="action-btn view" onclick='editShopProduct(${JSON.stringify(p.id)})'>Edit</button>
+        <button class="action-btn delete" onclick="deleteItem('shop','${p.id}')">Delete</button>
+      </div>
+    </td>
+  </tr>`).join('');
+}
+
+// ===== SHOP PRODUCT MODAL =====
+function openShopModal() {
+  document.getElementById('shopModalTitle').textContent = 'Add Product';
+  document.getElementById('shopId').value = '';
+  document.getElementById('shopName').value = '';
+  document.getElementById('shopPrice').value = '';
+  document.getElementById('shopOriginalPrice').value = '';
+  document.getElementById('shopCategory').value = '';
+  document.getElementById('shopImage').value = '';
+  document.getElementById('shopWaNum').value = '';
+  document.getElementById('shopStatus').value = 'instock';
+  document.getElementById('shopIsNew').checked = false;
+  document.getElementById('shopIsOffer').checked = false;
+  document.getElementById('shopModal').classList.add('active');
+}
+
+function editShopProduct(id) {
+  const p = cache.shop.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('shopModalTitle').textContent = 'Edit Product';
+  document.getElementById('shopId').value = p.id;
+  document.getElementById('shopName').value = p.name || '';
+  document.getElementById('shopPrice').value = p.price || '';
+  document.getElementById('shopOriginalPrice').value = p.original_price || '';
+  document.getElementById('shopCategory').value = p.category || '';
+  document.getElementById('shopImage').value = p.image || '';
+  document.getElementById('shopWaNum').value = p.wa_num || '';
+  document.getElementById('shopStatus').value = p.status || 'instock';
+  document.getElementById('shopIsNew').checked = !!p.is_new;
+  document.getElementById('shopIsOffer').checked = !!p.is_offer;
+  document.getElementById('shopModal').classList.add('active');
+}
+
+function closeShopModal() { document.getElementById('shopModal').classList.remove('active'); }
+document.getElementById('shopModal').addEventListener('click', e => { if(e.target===document.getElementById('shopModal')) closeShopModal(); });
+
+async function saveShopProduct() {
+  const id = document.getElementById('shopId').value;
+  const name = document.getElementById('shopName').value.trim();
+  const price = parseFloat(document.getElementById('shopPrice').value) || 0;
+  const originalPriceRaw = document.getElementById('shopOriginalPrice').value;
+  const original_price = originalPriceRaw ? parseFloat(originalPriceRaw) : null;
+  const category = document.getElementById('shopCategory').value.trim();
+  const image = document.getElementById('shopImage').value.trim();
+  const wa_num = document.getElementById('shopWaNum').value.trim();
+  const status = document.getElementById('shopStatus').value;
+  const is_new = document.getElementById('shopIsNew').checked;
+  const is_offer = document.getElementById('shopIsOffer').checked;
+
+  if (!name) { showToast('⚠️ Product name is required.'); return; }
+  if (!price) { showToast('⚠️ Price is required.'); return; }
+
+  const payload = { name, price, original_price, category, image, wa_num, status, is_new, is_offer };
+
+  try {
+    if (id) {
+      await sbFetch('shop_products', 'PATCH', payload, `?id=eq.${id}`);
+      const item = cache.shop.find(x => x.id === id);
+      if (item) Object.assign(item, payload);
+      showToast('✅ Product updated.');
+    } else {
+      const result = await sbFetch('shop_products', 'POST', payload);
+      if (result && result[0]) cache.shop.unshift(result[0]);
+      showToast('✅ Product added.');
+    }
+    closeShopModal();
+    renderPage(currentPage);
+    updateBadges();
+  } catch(e) {
+    if (e.message.toLowerCase().includes('does not exist') || e.message.toLowerCase().includes('relation')) {
+      showToast('⚠️ shop_products table not set up yet. See setup SQL.');
+    } else {
+      showToast('❌ Save failed: ' + e.message);
+    }
+  }
+}
+
+
 function renderLogins(data) {
   document.getElementById('loginCountPill').textContent = data.length;
   const tb = document.getElementById('loginsTable');
@@ -954,7 +1167,8 @@ function renderLogins(data) {
 
 // ===== FILTER / SEARCH =====
 function filterTable(type) {
-  const searchEl = document.getElementById(type.replace('bookings','book').replace('contacts','contact').replace('franchise','franchise').replace('products','product').replace('logins','login') + 'Search');
+  const searchIdMap = { bookings:'book', contacts:'contact', franchise:'franchise', products:'product', logins:'login', shop:'shop' };
+  const searchEl = document.getElementById(searchIdMap[type] + 'Search');
   const filterEl = document.getElementById(type.replace('bookings','book') + 'Filter');
   const q = searchEl ? searchEl.value.toLowerCase() : '';
   const f = filterEl ? filterEl.value : '';
@@ -965,6 +1179,7 @@ function filterTable(type) {
   if (type === 'franchise') renderFranchise(data);
   if (type === 'contacts')  renderContacts(data);
   if (type === 'products')  renderProducts(data);
+  if (type === 'shop')      renderShop(data);
   if (type === 'logins')    renderLogins(data);
 }
 
