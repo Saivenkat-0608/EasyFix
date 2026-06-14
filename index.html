@@ -757,6 +757,20 @@
   .city-item:hover { background: var(--blue-light); color: var(--blue); }
   .city-wrap { position: relative; }
 
+  /* ===== CITY BRANCH BANNER ===== */
+  .city-branch-banner {
+    display: none;
+    background: var(--green-light);
+    border-top: 1px solid #dcfce7;
+    text-align: center;
+    font-size: 13px;
+    color: var(--gray);
+    padding: 10px 24px;
+  }
+  .city-branch-banner.show { display: block; }
+  .city-branch-banner i { color: var(--green); margin-right: 4px; }
+  .city-branch-banner strong { color: var(--dark2); font-weight: 700; }
+
   @media (max-width: 768px) {
     .nav-toggle { display: flex; }
     .nav-actions { margin-left: auto; }
@@ -862,6 +876,9 @@
         <i class="fas fa-bars"></i>
       </button>
     </div>
+  </div>
+  <div class="city-branch-banner" id="cityBranchBanner">
+    <i class="fas fa-map-marker-alt"></i> Serviced locally via <strong id="branchName"></strong>. Local manager: <strong id="branchManager"></strong> <span id="branchPhone"></span>
   </div>
 </nav>
 
@@ -1952,10 +1969,32 @@ const citySelector = document.getElementById('citySelector');
 const cityDropdown = document.getElementById('cityDropdown');
 citySelector.addEventListener('click', e => { e.stopPropagation(); cityDropdown.classList.toggle('open'); });
 document.addEventListener('click', () => cityDropdown.classList.remove('open'));
+
+// Local franchise branch info shown when a serviced-via-franchise city is selected
+const cityBranches = {
+  'Bhimavaram': { branch: 'Bhimavaram Branch', manager: 'Ramu V.', phone: '+91 99999 88888' },
+  'Tanuku': { branch: 'Tanuku Branch', manager: 'Suresh K.', phone: '+91 98765 43210' },
+};
+function updateBranchBanner(city) {
+  const banner = document.getElementById('cityBranchBanner');
+  const info = cityBranches[city];
+  if (info) {
+    document.getElementById('branchName').textContent = info.branch;
+    document.getElementById('branchManager').textContent = info.manager;
+    document.getElementById('branchPhone').textContent = `(Ph: ${info.phone})`;
+    banner.classList.add('show');
+  } else {
+    banner.classList.remove('show');
+  }
+}
+updateBranchBanner(document.getElementById('selectedCity').textContent.trim());
+
 cityDropdown.querySelectorAll('.city-item').forEach(item => {
   item.addEventListener('click', () => {
-    document.getElementById('selectedCity').textContent = item.textContent;
+    const city = item.textContent;
+    document.getElementById('selectedCity').textContent = city;
     cityDropdown.classList.remove('open');
+    updateBranchBanner(city);
   });
 });
 
