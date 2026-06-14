@@ -141,6 +141,43 @@
     transition: all 0.2s;
   }
   .btn-login:hover { background: var(--blue-dark); }
+  .btn-admin {
+    padding: 8px 16px;
+    border-radius: 8px;
+    background: var(--dark2);
+    color: var(--white);
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    transition: all 0.2s;
+  }
+  .btn-admin:hover { background: var(--dark); }
+  .branch-list { margin-top: 8px; border-top: 1px solid var(--gray-border); }
+  .branch-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--gray-border);
+  }
+  .branch-row-info { font-size: 13px; color: var(--gray); line-height: 1.5; }
+  .branch-row-info strong { display: block; font-size: 14px; color: var(--dark); margin-bottom: 2px; }
+  .branch-row-actions { display: flex; gap: 6px; flex-shrink: 0; }
+  .icon-btn {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    border: 1px solid var(--gray-border);
+    background: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    color: var(--gray);
+    transition: all 0.2s;
+  }
+  .icon-btn:hover { border-color: var(--blue); color: var(--blue); }
+  .icon-btn.danger:hover { border-color: #ef4444; color: #ef4444; }
+  .admin-empty { color: var(--gray); font-size: 13px; text-align: center; padding: 16px 0; }
+  .admin-note { font-size: 12px; color: var(--gray); margin-top: 12px; line-height: 1.6; }
   .cart-btn {
     position: relative;
     width: 38px; height: 38px;
@@ -866,6 +903,7 @@
       <li class="nav-divider"></li>
       <li class="nav-link-action"><button class="btn-sell" onclick="requireLogin('sellModal')">Sell Product</button></li>
       <li class="nav-link-action"><button class="btn-login" id="accountBtn" onclick="openModal('loginModal')">Account / Login</button></li>
+      <li class="nav-link-action" id="adminNavItem" style="display:none;"><button class="btn-admin" onclick="openAdminPanel()"><i class="fas fa-user-shield"></i> Admin Panel</button></li>
     </ul>
     <div class="nav-actions">
       <button class="cart-btn" onclick="requireLogin('bookingModal')" id="cartBtn">
@@ -1258,6 +1296,38 @@
   </div>
 </div>
 
+<!-- ===== BRANCH ADMIN MODAL ===== -->
+<div class="modal-overlay" id="branchAdminModal">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <h3><i class="fas fa-user-shield" style="color:var(--blue);margin-right:8px;"></i>Manage Service Locations</h3>
+      <button class="modal-close" onclick="closeModal('branchAdminModal')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:14px;color:var(--gray);margin-bottom:24px;">Add or update the cities EasyFix services, along with the local franchise branch and manager contact shown to customers in that city.</p>
+      <div class="form-group"><label>City Name</label><input type="text" id="branch-city" placeholder="e.g. Bhimavaram"></div>
+      <div class="form-group"><label>Branch Name</label><input type="text" id="branch-name" placeholder="e.g. Bhimavaram Branch"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Local Manager Name</label><input type="text" id="branch-manager" placeholder="e.g. Ramu V."></div>
+        <div class="form-group"><label>Manager Phone</label><input type="tel" id="branch-phone" placeholder="+91 XXXXX XXXXX"></div>
+      </div>
+      <div id="branch-err" style="display:none;color:#ef4444;font-size:13px;margin-bottom:12px;"></div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn-primary" id="branch-submit-btn" style="flex:1;justify-content:center;" onclick="submitBranchForm()">
+          <i class="fas fa-plus"></i> Add Location
+        </button>
+        <button class="btn-secondary" id="branch-cancel-btn" style="display:none;justify-content:center;padding:14px 20px;" onclick="cancelBranchEdit()">
+          Cancel
+        </button>
+      </div>
+      <div class="branch-list" id="branchList">
+        <p class="admin-empty">Loading locations...</p>
+      </div>
+      <p class="admin-note"><i class="fas fa-info-circle"></i> Locations added here appear in the city selector and show the branch/manager banner to customers in that city.</p>
+    </div>
+  </div>
+</div>
+
 <!-- CHATBOT -->
 <button class="chatbot-btn" id="chatbotBtn" onclick="toggleChatbot()">
   <i class="fas fa-comment-dots"></i>
@@ -1305,6 +1375,22 @@ async function sbInsert(table, data) {
 async function sbSelect(table, query) {
   const res = await fetch(`${SB_URL}/${table}?${query}`, {
     method: 'GET', headers: SB_HEADERS
+  });
+  if (!res.ok) { const e = await res.text(); throw new Error(e); }
+  return res.json();
+}
+
+async function sbUpdate(table, query, data) {
+  const res = await fetch(`${SB_URL}/${table}?${query}`, {
+    method: 'PATCH', headers: SB_HEADERS, body: JSON.stringify(data)
+  });
+  if (!res.ok) { const e = await res.text(); throw new Error(e); }
+  return res.json();
+}
+
+async function sbDelete(table, query) {
+  const res = await fetch(`${SB_URL}/${table}?${query}`, {
+    method: 'DELETE', headers: SB_HEADERS
   });
   if (!res.ok) { const e = await res.text(); throw new Error(e); }
   return res.json();
@@ -1384,16 +1470,21 @@ function updateCartSummary() {
 function openBookingModal() { updateCartSummary(); openModal('bookingModal'); }
 
 // ===== MY ORDERS =====
+const ADMIN_EMAILS = ['admin@easyfix.com']; // <-- add the email(s) that should see the Admin Panel
+
 function updateAccountBtn() {
   const btn = document.getElementById('accountBtn');
+  const adminItem = document.getElementById('adminNavItem');
   const user = getCurrentUser();
   if (user) {
     const name = user.user_metadata?.full_name?.split(' ')[0] || user.email?.split('@')[0] || 'Account';
     btn.textContent = `Logout (${name})`;
     btn.setAttribute('onclick', 'doLogout()');
+    adminItem.style.display = ADMIN_EMAILS.includes(user.email) ? '' : 'none';
   } else {
     btn.textContent = 'Account / Login';
     btn.setAttribute('onclick', "openModal('loginModal')");
+    adminItem.style.display = 'none';
   }
 }
 
@@ -1970,11 +2061,14 @@ const cityDropdown = document.getElementById('cityDropdown');
 citySelector.addEventListener('click', e => { e.stopPropagation(); cityDropdown.classList.toggle('open'); });
 document.addEventListener('click', () => cityDropdown.classList.remove('open'));
 
-// Local franchise branch info shown when a serviced-via-franchise city is selected
-const cityBranches = {
+// Local franchise branch info shown when a serviced-via-franchise city is selected.
+// Seeded with defaults below, then overridden/extended from the city_branches table
+// (managed via the Admin Panel).
+let cityBranches = {
   'Bhimavaram': { branch: 'Bhimavaram Branch', manager: 'Ramu V.', phone: '+91 99999 88888' },
   'Tanuku': { branch: 'Tanuku Branch', manager: 'Suresh K.', phone: '+91 98765 43210' },
 };
+
 function updateBranchBanner(city) {
   const banner = document.getElementById('cityBranchBanner');
   const info = cityBranches[city];
@@ -1987,16 +2081,162 @@ function updateBranchBanner(city) {
     banner.classList.remove('show');
   }
 }
-updateBranchBanner(document.getElementById('selectedCity').textContent.trim());
 
-cityDropdown.querySelectorAll('.city-item').forEach(item => {
-  item.addEventListener('click', () => {
-    const city = item.textContent;
-    document.getElementById('selectedCity').textContent = city;
-    cityDropdown.classList.remove('open');
-    updateBranchBanner(city);
-  });
+function ensureCityItem(city) {
+  const exists = [...cityDropdown.querySelectorAll('.city-item')].some(el => el.textContent.trim() === city);
+  if (!exists) {
+    const div = document.createElement('div');
+    div.className = 'city-item';
+    div.textContent = city;
+    cityDropdown.appendChild(div);
+  }
+}
+
+function selectCity(city) {
+  document.getElementById('selectedCity').textContent = city;
+  cityDropdown.classList.remove('open');
+  updateBranchBanner(city);
+}
+
+// Delegated listener so cities added later (via Admin Panel) work without rebinding
+cityDropdown.addEventListener('click', e => {
+  const item = e.target.closest('.city-item');
+  if (!item) return;
+  selectCity(item.textContent.trim());
 });
+
+// Load saved locations/branches from Supabase and merge with the defaults above
+async function loadCityBranches() {
+  try {
+    const rows = await sbSelect('city_branches', 'select=*&order=city.asc');
+    rows.forEach(row => {
+      cityBranches[row.city] = { id: row.id, branch: row.branch_name, manager: row.manager_name, phone: row.phone };
+      ensureCityItem(row.city);
+    });
+  } catch (err) {
+    console.warn('city_branches table not available yet:', err.message);
+  }
+  updateBranchBanner(document.getElementById('selectedCity').textContent.trim());
+  if (document.getElementById('branchAdminModal').classList.contains('active')) renderAdminBranchList();
+}
+loadCityBranches();
+
+// ===== ADMIN: MANAGE SERVICE LOCATIONS / BRANCHES =====
+let editingBranchCity = null;
+
+function openAdminPanel() {
+  cancelBranchEdit();
+  renderAdminBranchList();
+  openModal('branchAdminModal');
+}
+
+function renderAdminBranchList() {
+  const list = document.getElementById('branchList');
+  const cities = Object.keys(cityBranches).sort();
+  if (!cities.length) {
+    list.innerHTML = '<p class="admin-empty">No locations added yet.</p>';
+    return;
+  }
+  list.innerHTML = cities.map(city => {
+    const info = cityBranches[city];
+    const safeCity = city.replace(/'/g, "\\'");
+    return `
+      <div class="branch-row">
+        <div class="branch-row-info">
+          <strong>${city}</strong>
+          ${info.branch} · ${info.manager} · ${info.phone}
+        </div>
+        <div class="branch-row-actions">
+          <button class="icon-btn" onclick="editBranch('${safeCity}')" title="Edit"><i class="fas fa-pen"></i></button>
+          <button class="icon-btn danger" onclick="deleteBranch('${safeCity}')" title="Delete"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function editBranch(city) {
+  const info = cityBranches[city];
+  if (!info) return;
+  editingBranchCity = city;
+  document.getElementById('branch-city').value = city;
+  document.getElementById('branch-name').value = info.branch;
+  document.getElementById('branch-manager').value = info.manager;
+  document.getElementById('branch-phone').value = info.phone;
+  document.getElementById('branch-submit-btn').innerHTML = '<i class="fas fa-check"></i> Update Location';
+  document.getElementById('branch-cancel-btn').style.display = '';
+  document.getElementById('branch-city').focus();
+}
+
+function cancelBranchEdit() {
+  editingBranchCity = null;
+  ['branch-city','branch-name','branch-manager','branch-phone'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('branch-submit-btn').innerHTML = '<i class="fas fa-plus"></i> Add Location';
+  document.getElementById('branch-cancel-btn').style.display = 'none';
+  const err = document.getElementById('branch-err');
+  err.style.display = 'none'; err.textContent = '';
+}
+
+async function submitBranchForm() {
+  const city = document.getElementById('branch-city').value.trim();
+  const branch = document.getElementById('branch-name').value.trim();
+  const manager = document.getElementById('branch-manager').value.trim();
+  const phone = document.getElementById('branch-phone').value.trim();
+  const err = document.getElementById('branch-err');
+  err.style.display = 'none'; err.textContent = '';
+
+  if (!city || !branch || !manager || !phone) {
+    err.textContent = 'Please fill in all fields.';
+    err.style.display = 'block';
+    return;
+  }
+
+  const payload = { city, branch_name: branch, manager_name: manager, phone };
+  const btn = document.getElementById('branch-submit-btn');
+  const wasEditing = editingBranchCity;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+  try {
+    const editTarget = wasEditing ? cityBranches[wasEditing] : null;
+    const sameCityExisting = cityBranches[city];
+
+    if (editTarget && editTarget.id) {
+      await sbUpdate('city_branches', `id=eq.${editTarget.id}`, payload);
+      if (wasEditing !== city) delete cityBranches[wasEditing];
+    } else if (sameCityExisting && sameCityExisting.id) {
+      await sbUpdate('city_branches', `id=eq.${sameCityExisting.id}`, payload);
+    } else {
+      await sbInsert('city_branches', payload);
+      if (wasEditing && wasEditing !== city) delete cityBranches[wasEditing];
+    }
+    const wasEditingMode = !!wasEditing;
+    cancelBranchEdit();
+    await loadCityBranches();
+    renderAdminBranchList();
+    showToast(wasEditingMode ? '✅ Location updated' : '✅ Location added');
+  } catch (e) {
+    err.textContent = /duplicate/i.test(e.message) ? 'This city already exists. Use Edit to update it instead.' : ('Could not save location: ' + e.message);
+    err.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    if (!editingBranchCity) btn.innerHTML = '<i class="fas fa-plus"></i> Add Location';
+  }
+}
+
+async function deleteBranch(city) {
+  const info = cityBranches[city];
+  if (!info) return;
+  if (!confirm(`Remove the local branch info for ${city}?`)) return;
+  try {
+    if (info.id) await sbDelete('city_branches', `id=eq.${info.id}`);
+    delete cityBranches[city];
+    renderAdminBranchList();
+    updateBranchBanner(document.getElementById('selectedCity').textContent.trim());
+    showToast('🗑️ Location removed');
+  } catch (e) {
+    showToast('Could not remove location: ' + e.message);
+  }
+}
 
 // Mobile nav toggle
 const navToggle = document.getElementById('navToggle');
