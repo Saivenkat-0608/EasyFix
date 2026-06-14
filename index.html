@@ -752,6 +752,15 @@
     .nav-top span:first-child { display: inline; }
   }
 </style>
+<!-- ===== CLERK AUTH SDK ===== -->
+<!-- Replace YOUR_CLERK_PUBLISHABLE_KEY with the key from clerk.com → API Keys -->
+<script
+  async
+  crossorigin="anonymous"
+  data-clerk-publishable-key="pk_test_d29ya2FibGUtc3RpbmdyYXktMjMuY2xlcmsuYWNjb3VudHMuZGV2JA"
+  src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
+  type="text/javascript"
+></script>
 </head>
 <body>
 
@@ -788,7 +797,7 @@
     </ul>
     <div class="nav-actions">
       <button class="btn-sell" onclick="requireLogin('sellModal')">Sell Product</button>
-      <button class="btn-login" onclick="openModal('loginModal')">Account / Login</button>
+      <button class="btn-login" id="accountBtn" onclick="openModal('loginModal')">Account / Login</button>
       <button class="cart-btn" onclick="requireLogin('bookingModal')" id="cartBtn">
         <i class="fas fa-shopping-cart"></i>
         <div class="cart-badge" id="cartCount">0</div>
@@ -1298,10 +1307,24 @@ function updateCartSummary() {
 function openBookingModal() { updateCartSummary(); openModal('bookingModal'); }
 
 // ===== MY ORDERS =====
+function updateAccountBtn() {
+  const btn = document.getElementById('accountBtn');
+  const user = getCurrentUser();
+  if (user) {
+    const name = user.user_metadata?.full_name?.split(' ')[0] || user.email?.split('@')[0] || 'Account';
+    btn.textContent = `Logout (${name})`;
+    btn.setAttribute('onclick', 'doLogout()');
+  } else {
+    btn.textContent = 'Account / Login';
+    btn.setAttribute('onclick', "openModal('loginModal')");
+  }
+}
+
 async function renderOrders() {
   const section = document.getElementById('orders');
   const grid    = document.getElementById('ordersGrid');
   const user    = getCurrentUser();
+  updateAccountBtn();
 
   if (!user) {
     section.style.display = 'none';
@@ -1511,8 +1534,51 @@ async function submitFranchiseModal() {
   finally { btn.textContent = 'Submit Franchise Application'; btn.disabled = false; }
 }
 
-// ===== SUPABASE AUTH =====
-const SB_AUTH = 'https://lonyxwzivoetbqibpjhj.supabase.co/auth/v1';
+// ===== CLERK AUTH =====
+// Loaded via the <script data-clerk-publishable-key="..."> tag in <head>.
+// Replace YOUR_CLERK_PUBLISHABLE_KEY with your real key from clerk.com → API Keys.
+let clerk = null;
+
+function waitForClerkScript() {
+  return new Promise((resolve, reject) => {
+    if (window.Clerk) return resolve(window.Clerk);
+    let tries = 0;
+    const interval = setInterval(() => {
+      tries++;
+      if (window.Clerk) {
+        clearInterval(interval);
+        resolve(window.Clerk);
+      } else if (tries > 100) { // ~10 seconds
+        clearInterval(interval);
+        reject(new Error('Clerk SDK failed to load. Check your publishable key and internet connection.'));
+      }
+    }, 100);
+  });
+}
+
+let clerkReady = (async () => {
+  clerk = await waitForClerkScript();
+  await clerk.load();
+  // If a session already exists (e.g. returning visit), populate ef_user/ef_token
+  if (clerk.user) {
+    await persistClerkSession();
+    renderOrders();
+  }
+})();
+
+async function persistClerkSession() {
+  const token = await clerk.session.getToken();
+  const u = clerk.user;
+  sessionStorage.setItem('ef_token', token);
+  sessionStorage.setItem('ef_user', JSON.stringify({
+    id: u.id,
+    email: u.primaryEmailAddress?.emailAddress,
+    user_metadata: {
+      full_name: u.fullName || `${u.firstName || ''} ${u.lastName || ''}`.trim(),
+      phone: u.primaryPhoneNumber?.phoneNumber || ''
+    }
+  }));
+}
 
 // Stores pending register data while OTP is being verified
 let pendingReg = null;
@@ -1551,7 +1617,7 @@ function setBtnLoading(id, loading, label) {
 }
 
 // ── REGISTER ──
-// Flow: signup (Supabase auto-sends OTP to email) → verify OTP → account active
+// Flow: signUp.create() → Clerk emails a 6-digit code → verify → session active
 async function doRegister() {
   const name  = document.getElementById('reg-name').value.trim();
   const email = document.getElementById('reg-email').value.trim();
@@ -1565,32 +1631,30 @@ async function doRegister() {
 
   setBtnLoading('reg-btn', true, '');
   try {
-    // Step 1 — Create account via signup; Supabase auto-emails a 6-digit OTP
-    const signupRes = await fetch(`${SB_AUTH}/signup`, {
-      method: 'POST',
-      headers: { 'apikey': SB_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email, password: pass,
-        data: { full_name: name, phone }
-      })
+    await clerkReady;
+    const [firstName, ...rest] = name.split(' ');
+    const lastName = rest.join(' ');
+
+    const signUp = await clerk.client.signUp.create({
+      emailAddress: email,
+      password: pass,
+      firstName,
+      lastName
     });
-    const signupData = await signupRes.json();
 
-    if (!signupRes.ok || signupData.error) {
-      const msg = (signupData.error_description || signupData.error?.message || signupData.error || '').toLowerCase();
-      if (msg.includes('already registered') || msg.includes('already exists') || msg.includes('user already'))
-        throw new Error('An account with this email already exists. Please sign in instead.');
-      throw new Error(signupData.error_description || signupData.error?.message || 'Registration failed. Please try again.');
-    }
+    // Trigger Clerk's 6-digit email verification code
+    await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
 
-    // Account created but unconfirmed — Supabase has sent OTP to the email
-    // Store details for OTP verification step
-    pendingReg = { name, email, phone, pass, userId: signupData.user?.id };
+    pendingReg = { name, email, phone, pass };
     document.getElementById('otp-email-display').textContent = email;
     authShow('otp');
 
   } catch(e) {
-    setAuthErr('reg-err', '❌ ' + e.message);
+    const msg = (e?.errors?.[0]?.longMessage || e?.errors?.[0]?.message || e.message || '');
+    if (msg.toLowerCase().includes('already') || msg.toLowerCase().includes('taken'))
+      setAuthErr('reg-err', '❌ An account with this email already exists. Please sign in instead.');
+    else
+      setAuthErr('reg-err', '❌ ' + (msg || 'Registration failed. Please try again.'));
   } finally {
     setBtnLoading('reg-btn', false, '<i class="fas fa-user-plus"></i> Create Account & Send OTP');
   }
@@ -1598,30 +1662,28 @@ async function doRegister() {
 
 // ── VERIFY OTP ──
 async function doVerifyOtp() {
-  const otp   = document.getElementById('otp-code').value.trim();
-  const email = pendingReg?.email || '';
+  const otp = document.getElementById('otp-code').value.trim();
   if (!otp || otp.length < 6) return setAuthErr('otp-err', '⚠️ Enter the 6-digit OTP from your email.');
 
   setBtnLoading('otp-btn', true, '');
   try {
-    // Verify the signup OTP — type must be 'signup' for email confirmation OTPs
-    const verifyRes = await fetch(`${SB_AUTH}/verify`, {
-      method: 'POST',
-      headers: { 'apikey': SB_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'signup', email, token: otp })
-    });
-    const verifyData = await verifyRes.json();
+    await clerkReady;
+    const result = await clerk.client.signUp.attemptEmailAddressVerification({ code: otp });
 
-    if (!verifyRes.ok || verifyData.error) {
-      const msg = (verifyData.error_description || verifyData.error?.message || verifyData.error || '');
-      if (msg.toLowerCase().includes('expired'))
-        throw new Error('OTP has expired. Click "Resend OTP" to get a new one.');
-      if (msg.toLowerCase().includes('invalid') || msg.toLowerCase().includes('otp') || msg.toLowerCase().includes('token'))
-        throw new Error('Incorrect OTP. Please check your email and try again.');
-      throw new Error(msg || 'Verification failed. Please try again.');
+    if (result.status !== 'complete') {
+      throw new Error('Verification incomplete. Please try again.');
     }
 
-    // OTP verified ✅ — save user record to logins table for admin dashboard
+    // Activate the new session
+    await clerk.setActive({ session: result.createdSessionId });
+    await persistClerkSession();
+
+    // Save phone number to user profile (Clerk doesn't take it at signup by default)
+    if (pendingReg?.phone) {
+      try { await clerk.user.update({ unsafeMetadata: { phone: pendingReg.phone } }); } catch {}
+    }
+
+    // Save user record to logins table for admin dashboard
     await sbInsert('logins', {
       id: genId('#USR'),
       name: pendingReg.name,
@@ -1632,12 +1694,19 @@ async function doVerifyOtp() {
 
     document.getElementById('success-title').textContent = 'Email Verified! 🎉';
     document.getElementById('success-msg').textContent =
-      `Welcome to EasyFix, ${pendingReg.name}! Your account is ready. You can now sign in anytime with your email and password.`;
+      `Welcome to EasyFix, ${pendingReg.name}! Your account is ready and you're signed in.`;
     authShow('success');
     pendingReg = null;
+    renderOrders();
 
   } catch(e) {
-    setAuthErr('otp-err', '❌ ' + e.message);
+    const msg = (e?.errors?.[0]?.longMessage || e?.errors?.[0]?.message || e.message || '');
+    if (msg.toLowerCase().includes('expired'))
+      setAuthErr('otp-err', '❌ OTP has expired. Click "Resend OTP" to get a new one.');
+    else if (msg.toLowerCase().includes('incorrect') || msg.toLowerCase().includes('invalid'))
+      setAuthErr('otp-err', '❌ Incorrect OTP. Please check your email and try again.');
+    else
+      setAuthErr('otp-err', '❌ ' + (msg || 'Verification failed. Please try again.'));
   } finally {
     setBtnLoading('otp-btn', false, '<i class="fas fa-check-circle"></i> Verify & Continue');
   }
@@ -1648,19 +1717,13 @@ async function resendOtp() {
   const email = pendingReg?.email;
   if (!email) return;
   try {
-    // Use /resend endpoint with signup type to re-trigger the confirmation email
-    const res = await fetch(`${SB_AUTH}/resend`, {
-      method: 'POST',
-      headers: { 'apikey': SB_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type: 'signup', email })
-    });
-    if (res.ok || res.status === 204) showToast('📧 New OTP sent to ' + email);
-    else showToast('❌ Could not resend OTP. Try again in a minute.');
-  } catch(e) { showToast('❌ Could not resend OTP.'); }
+    await clerkReady;
+    await clerk.client.signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
+    showToast('📧 New OTP sent to ' + email);
+  } catch(e) { showToast('❌ Could not resend OTP. Try again in a minute.'); }
 }
 
 // ── LOGIN ──
-// Checks email + password directly against Supabase Auth — no localStorage, no workarounds
 async function doLogin() {
   const email = document.getElementById('li-email').value.trim();
   const pass  = document.getElementById('li-pass').value;
@@ -1668,28 +1731,22 @@ async function doLogin() {
 
   setBtnLoading('li-btn', true, '');
   try {
-    const res = await fetch(`${SB_AUTH}/token?grant_type=password`, {
-      method: 'POST',
-      headers: { 'apikey': SB_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password: pass })
+    await clerkReady;
+    const result = await clerk.client.signIn.create({
+      identifier: email,
+      password: pass
     });
-    const data = await res.json();
 
-    if (!res.ok || data.error || data.error_description) {
-      const msg = (data.error_description || data.error?.message || data.error || '').toLowerCase();
-      if (msg.includes('invalid login') || msg.includes('invalid credentials') || res.status === 400)
-        throw new Error('Incorrect email or password. Please try again.');
-      if (msg.includes('not confirmed'))
-        throw new Error('Email not verified. Please complete OTP verification during registration.');
-      throw new Error(data.error_description || data.error || 'Login failed. Please try again.');
+    if (result.status !== 'complete') {
+      throw new Error('Additional verification required. Please try again.');
     }
 
-    // Save session for this tab session
-    sessionStorage.setItem('ef_token', data.access_token);
-    sessionStorage.setItem('ef_user', JSON.stringify(data.user));
+    await clerk.setActive({ session: result.createdSessionId });
+    await persistClerkSession();
     renderOrders();
 
-    const userName = data.user?.user_metadata?.full_name || email.split('@')[0];
+    const u = clerk.user;
+    const userName = u.fullName || email.split('@')[0];
     document.getElementById('success-title').textContent = 'Welcome Back! 👋';
     document.getElementById('success-msg').textContent = `Signed in as ${userName}. Your bookings and services are ready.`;
     authShow('success');
@@ -1697,35 +1754,55 @@ async function doLogin() {
     document.getElementById('li-pass').value  = '';
 
   } catch(e) {
-    setAuthErr('li-err', '❌ ' + e.message);
+    const msg = (e?.errors?.[0]?.longMessage || e?.errors?.[0]?.message || e.message || '');
+    if (msg.toLowerCase().includes('identifier') || msg.toLowerCase().includes('password') || msg.toLowerCase().includes('not found'))
+      setAuthErr('li-err', '❌ Incorrect email or password. Please try again.');
+    else if (msg.toLowerCase().includes('verify'))
+      setAuthErr('li-err', '❌ Email not verified. Please complete OTP verification during registration.');
+    else
+      setAuthErr('li-err', '❌ ' + (msg || 'Login failed. Please try again.'));
   } finally {
     setBtnLoading('li-btn', false, '<i class="fas fa-sign-in-alt"></i> Sign In');
   }
 }
 
 // ── FORGOT PASSWORD ──
+// Clerk flow: signIn.create with identifier → prepareFirstFactor(reset_password_email_code)
 async function doForgotPassword() {
   const email = document.getElementById('fp-email').value.trim();
   if (!email) return setAuthErr('fp-err', '⚠️ Please enter your email address.');
 
   setBtnLoading('fp-btn', true, '');
   try {
-    const res = await fetch(`${SB_AUTH}/recover`, {
-      method: 'POST',
-      headers: { 'apikey': SB_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email })
-    });
-    // Supabase returns 200 even if email not found (security), so we show success always
+    await clerkReady;
+    const signIn = await clerk.client.signIn.create({ identifier: email });
+    const emailFactor = signIn.supportedFirstFactors?.find(f => f.strategy === 'reset_password_email_code');
+    if (emailFactor) {
+      await signIn.prepareFirstFactor({ strategy: 'reset_password_email_code', emailAddressId: emailFactor.emailAddressId });
+    }
     const succ = document.getElementById('fp-success');
-    succ.textContent = `✅ Reset link sent to ${email}. Check your inbox (and spam folder).`;
+    succ.textContent = `✅ Reset code sent to ${email}. Check your inbox (and spam folder).`;
     succ.style.display = 'block';
     document.getElementById('fp-err').style.display = 'none';
     document.getElementById('fp-email').value = '';
   } catch(e) {
-    setAuthErr('fp-err', '❌ Something went wrong. Please try again.');
+    // Avoid revealing whether the email exists
+    const succ = document.getElementById('fp-success');
+    succ.textContent = `✅ If an account exists for ${email}, a reset code has been sent.`;
+    succ.style.display = 'block';
+    document.getElementById('fp-err').style.display = 'none';
   } finally {
     setBtnLoading('fp-btn', false, '<i class="fas fa-paper-plane"></i> Send Reset Link');
   }
+}
+
+// ── LOGOUT ──
+async function doLogout() {
+  await clerkReady;
+  await clerk.signOut();
+  sessionStorage.removeItem('ef_token');
+  sessionStorage.removeItem('ef_user');
+  renderOrders();
 }
 
 // ── OLD submitLogin removed — replaced by doLogin above ──
