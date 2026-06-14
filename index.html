@@ -84,7 +84,6 @@
   .city-selector i { color: var(--blue); font-size: 12px; }
   .nav-links {
     display: flex;
-    align-items: center;
     gap: 4px;
     list-style: none;
     margin-left: auto;
@@ -98,27 +97,12 @@
     transition: all 0.2s;
   }
   .nav-links a:hover { color: var(--blue); background: var(--blue-light); }
-  .nav-link-action { display: flex; }
-  .nav-divider { display: none; }
   .nav-actions {
     display: flex;
     align-items: center;
     gap: 10px;
     flex-shrink: 0;
   }
-  .nav-toggle {
-    display: none;
-    width: 38px; height: 38px;
-    border-radius: 10px;
-    border: 1.5px solid var(--gray-border);
-    background: var(--white);
-    align-items: center; justify-content: center;
-    font-size: 16px;
-    color: var(--dark2);
-    transition: all 0.2s;
-    flex-shrink: 0;
-  }
-  .nav-toggle:hover { border-color: var(--blue); color: var(--blue); }
   .btn-sell {
     padding: 8px 16px;
     border-radius: 8px;
@@ -758,45 +742,7 @@
   .city-wrap { position: relative; }
 
   @media (max-width: 768px) {
-    .nav-toggle { display: flex; }
-    .nav-links {
-      display: none;
-      position: absolute;
-      top: 100%;
-      left: 0;
-      right: 0;
-      flex-direction: column;
-      align-items: stretch;
-      margin-left: 0;
-      gap: 4px;
-      background: var(--white);
-      border-top: 1px solid var(--gray-border);
-      box-shadow: var(--shadow-lg);
-      padding: 10px 16px 18px;
-      z-index: 999;
-    }
-    .nav-links.open { display: flex; }
-    .nav-links li { width: 100%; }
-    .nav-links a {
-      display: block;
-      padding: 12px 14px;
-      border-radius: 8px;
-    }
-    .nav-divider {
-      display: block;
-      height: 1px;
-      background: var(--gray-border);
-      margin: 6px 0;
-    }
-    .nav-link-action .btn-sell,
-    .nav-link-action .btn-login {
-      display: flex;
-      width: 100%;
-      align-items: center;
-      justify-content: center;
-      padding: 12px 16px;
-      font-size: 14px;
-    }
+    .nav-links { display: none; }
     .franchise-layout { grid-template-columns: 1fr; gap: 32px; }
     .contact-layout { grid-template-columns: 1fr; gap: 32px; }
     .franchise-stats { grid-template-columns: 1fr 1fr 1fr; }
@@ -843,22 +789,18 @@
         <div class="city-item">Tanuku</div>
       </div>
     </div>
-    <ul class="nav-links" id="navLinks">
+    <ul class="nav-links">
       <li><a href="#hero">Home</a></li>
       <li><a href="#services-list">Services</a></li>
       <li><a href="#franchise">Franchise</a></li>
       <li><a href="#contact">Contact</a></li>
-      <li class="nav-divider"></li>
-      <li class="nav-link-action"><button class="btn-sell" onclick="requireLogin('sellModal')">Sell Product</button></li>
-      <li class="nav-link-action"><button class="btn-login" id="accountBtn" onclick="openModal('loginModal')">Account / Login</button></li>
     </ul>
     <div class="nav-actions">
+      <button class="btn-sell" onclick="requireLogin('sellModal')">Sell Product</button>
+      <button class="btn-login" id="accountBtn" onclick="openModal('loginModal')">Account / Login</button>
       <button class="cart-btn" onclick="requireLogin('bookingModal')" id="cartBtn">
         <i class="fas fa-shopping-cart"></i>
         <div class="cart-badge" id="cartCount">0</div>
-      </button>
-      <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
-        <i class="fas fa-bars"></i>
       </button>
     </div>
   </div>
@@ -1956,26 +1898,6 @@ cityDropdown.querySelectorAll('.city-item').forEach(item => {
     document.getElementById('selectedCity').textContent = item.textContent;
     cityDropdown.classList.remove('open');
   });
-});
-
-// Mobile nav toggle
-const navToggle = document.getElementById('navToggle');
-const navLinks = document.getElementById('navLinks');
-const navToggleIcon = navToggle.querySelector('i');
-function closeNavMenu() {
-  navLinks.classList.remove('open');
-  navToggleIcon.className = 'fas fa-bars';
-}
-navToggle.addEventListener('click', e => {
-  e.stopPropagation();
-  const isOpen = navLinks.classList.toggle('open');
-  navToggleIcon.className = isOpen ? 'fas fa-times' : 'fas fa-bars';
-});
-navLinks.querySelectorAll('a, button').forEach(el => {
-  el.addEventListener('click', closeNavMenu);
-});
-document.addEventListener('click', e => {
-  if (!navLinks.contains(e.target) && !navToggle.contains(e.target)) closeNavMenu();
 });
 
 // Chatbot
