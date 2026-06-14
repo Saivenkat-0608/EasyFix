@@ -84,7 +84,6 @@
   .city-selector i { color: var(--blue); font-size: 12px; }
   .nav-links {
     display: flex;
-    align-items: center;
     gap: 4px;
     list-style: none;
     margin-left: auto;
@@ -98,27 +97,12 @@
     transition: all 0.2s;
   }
   .nav-links a:hover { color: var(--blue); background: var(--blue-light); }
-  .nav-link-action { display: flex; }
-  .nav-divider { display: none; }
   .nav-actions {
     display: flex;
     align-items: center;
     gap: 10px;
     flex-shrink: 0;
   }
-  .nav-toggle {
-    display: none;
-    width: 38px; height: 38px;
-    border-radius: 10px;
-    border: 1.5px solid var(--gray-border);
-    background: var(--white);
-    align-items: center; justify-content: center;
-    font-size: 16px;
-    color: var(--dark2);
-    transition: all 0.2s;
-    flex-shrink: 0;
-  }
-  .nav-toggle:hover { border-color: var(--blue); color: var(--blue); }
   .btn-sell {
     padding: 8px 16px;
     border-radius: 8px;
@@ -141,43 +125,6 @@
     transition: all 0.2s;
   }
   .btn-login:hover { background: var(--blue-dark); }
-  .btn-admin {
-    padding: 8px 16px;
-    border-radius: 8px;
-    background: var(--dark2);
-    color: var(--white);
-    font-size: 13px;
-    font-weight: 600;
-    border: none;
-    transition: all 0.2s;
-  }
-  .btn-admin:hover { background: var(--dark); }
-  .branch-list { margin-top: 8px; border-top: 1px solid var(--gray-border); }
-  .branch-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 0;
-    border-bottom: 1px solid var(--gray-border);
-  }
-  .branch-row-info { font-size: 13px; color: var(--gray); line-height: 1.5; }
-  .branch-row-info strong { display: block; font-size: 14px; color: var(--dark); margin-bottom: 2px; }
-  .branch-row-actions { display: flex; gap: 6px; flex-shrink: 0; }
-  .icon-btn {
-    width: 32px; height: 32px;
-    border-radius: 8px;
-    border: 1px solid var(--gray-border);
-    background: var(--white);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 13px;
-    color: var(--gray);
-    transition: all 0.2s;
-  }
-  .icon-btn:hover { border-color: var(--blue); color: var(--blue); }
-  .icon-btn.danger:hover { border-color: #ef4444; color: #ef4444; }
-  .admin-empty { color: var(--gray); font-size: 13px; text-align: center; padding: 16px 0; }
-  .admin-note { font-size: 12px; color: var(--gray); margin-top: 12px; line-height: 1.6; }
   .cart-btn {
     position: relative;
     width: 38px; height: 38px;
@@ -794,68 +741,177 @@
   .city-item:hover { background: var(--blue-light); color: var(--blue); }
   .city-wrap { position: relative; }
 
-  /* ===== CITY BRANCH BANNER ===== */
-  .city-branch-banner {
+  /* ===== MOBILE HAMBURGER ===== */
+  .hamburger {
     display: none;
-    background: var(--green-light);
-    border-top: 1px solid #dcfce7;
-    text-align: center;
-    font-size: 13px;
-    color: var(--gray);
-    padding: 10px 24px;
+    flex-direction: column;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    margin-left: auto;
   }
-  .city-branch-banner.show { display: block; }
-  .city-branch-banner i { color: var(--green); margin-right: 4px; }
-  .city-branch-banner strong { color: var(--dark2); font-weight: 700; }
+  .hamburger span {
+    display: block;
+    width: 22px;
+    height: 2px;
+    background: var(--dark);
+    border-radius: 2px;
+    transition: all 0.3s;
+  }
+  .mobile-nav-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 999;
+  }
+  .mobile-nav-overlay.open { display: block; }
+  .mobile-nav-drawer {
+    position: fixed;
+    top: 0; left: -100%;
+    width: 280px;
+    height: 100vh;
+    background: var(--white);
+    z-index: 1001;
+    transition: left 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .mobile-nav-drawer.open { left: 0; }
+  .mobile-nav-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--gray-border);
+  }
+  .mobile-nav-close {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    border: 1px solid var(--gray-border);
+    background: var(--white);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    color: var(--gray);
+    cursor: pointer;
+  }
+  .mobile-nav-links {
+    padding: 12px 0;
+    list-style: none;
+  }
+  .mobile-nav-links li a {
+    display: block;
+    padding: 14px 24px;
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--dark);
+    border-left: 3px solid transparent;
+    transition: all 0.2s;
+  }
+  .mobile-nav-links li a:hover {
+    color: var(--blue);
+    background: var(--blue-light);
+    border-left-color: var(--blue);
+  }
+  .mobile-nav-actions {
+    padding: 16px 20px;
+    border-top: 1px solid var(--gray-border);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: auto;
+  }
+  .mobile-nav-actions .btn-sell,
+  .mobile-nav-actions .btn-login {
+    width: 100%;
+    text-align: center;
+    padding: 12px;
+    font-size: 14px;
+  }
 
   @media (max-width: 768px) {
-    .nav-toggle { display: flex; }
-    .nav-actions { margin-left: auto; }
-    .nav-links {
-      display: none;
-      position: absolute;
-      top: 100%;
-      left: 0;
-      right: 0;
-      flex-direction: column;
-      align-items: stretch;
-      margin-left: 0;
-      gap: 4px;
-      background: var(--white);
-      border-top: 1px solid var(--gray-border);
-      box-shadow: var(--shadow-lg);
-      padding: 10px 16px 18px;
-      z-index: 999;
-    }
-    .nav-links.open { display: flex; }
-    .nav-links li { width: 100%; }
-    .nav-links a {
-      display: block;
-      padding: 12px 14px;
-      border-radius: 8px;
-    }
-    .nav-divider {
-      display: block;
-      height: 1px;
-      background: var(--gray-border);
-      margin: 6px 0;
-    }
-    .nav-link-action .btn-sell,
-    .nav-link-action .btn-login {
-      display: flex;
-      width: 100%;
-      align-items: center;
-      justify-content: center;
-      padding: 12px 16px;
-      font-size: 14px;
-    }
-    .franchise-layout { grid-template-columns: 1fr; gap: 32px; }
-    .contact-layout { grid-template-columns: 1fr; gap: 32px; }
-    .franchise-stats { grid-template-columns: 1fr 1fr 1fr; }
-    .form-row { grid-template-columns: 1fr; }
-    .hero-stats { gap: 24px; }
+    /* NAV */
+    .nav-links { display: none; }
+    .hamburger { display: flex; }
+    .nav-actions .btn-sell,
+    .nav-actions .btn-login { display: none; }
+    .nav-main { padding: 0 16px; gap: 12px; }
+
+    /* NAV TOP BAR */
     .nav-top span { display: none; }
-    .nav-top span:first-child { display: inline; }
+    .nav-top span:first-child { display: inline; font-size: 11px; }
+
+    /* HERO */
+    #hero { padding: 48px 16px 40px; }
+    #hero h1 { font-size: clamp(24px, 7vw, 36px); }
+    #hero p { font-size: 14px; margin-bottom: 24px; }
+    .hero-stats { gap: 16px; }
+    .hero-stat .num { font-size: 22px; }
+    .hero-stat .lbl { font-size: 11px; }
+    .hero-guarantee { font-size: 12px; padding: 6px 14px; }
+
+    /* SECTIONS */
+    .section { padding: 48px 16px; }
+    .section-header { margin-bottom: 32px; }
+    .section-header h2 { font-size: clamp(20px, 5vw, 28px); }
+
+    /* SERVICES */
+    .services-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .service-card { padding: 20px 12px; }
+    .service-icon { width: 52px; height: 52px; font-size: 22px; }
+    .service-card h3 { font-size: 13px; }
+    .service-card p { font-size: 11px; }
+
+    /* ORDERS */
+    .orders-grid { grid-template-columns: 1fr; }
+
+    /* FRANCHISE */
+    .franchise-layout { grid-template-columns: 1fr; gap: 32px; }
+    .franchise-stats { grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+    .franchise-stat { padding: 14px 10px; }
+    .franchise-stat .num { font-size: 20px; }
+    .franchise-form-box { padding: 20px; }
+
+    /* CONTACT */
+    .contact-layout { grid-template-columns: 1fr; gap: 32px; }
+    .contact-form-box { padding: 20px; }
+
+    /* FORM */
+    .form-row { grid-template-columns: 1fr; }
+
+    /* MODALS */
+    .modal-overlay { padding: 12px; align-items: flex-end; }
+    .modal {
+      border-radius: 16px 16px 0 0;
+      max-height: 92vh;
+      width: 100%;
+    }
+    .modal-body { padding: 16px; }
+    .modal-header { padding: 16px; }
+
+    /* CHATBOT */
+    .chatbot-btn { bottom: 16px; right: 16px; width: 50px; height: 50px; font-size: 20px; }
+    .chatbot-window {
+      bottom: 78px; right: 8px; left: 8px;
+      width: auto;
+      border-radius: 14px;
+    }
+
+    /* TOAST */
+    .toast { white-space: normal; text-align: center; width: calc(100% - 32px); }
+
+    /* BUTTONS */
+    .btn-primary, .btn-secondary { padding: 12px 20px; font-size: 14px; }
+  }
+
+  @media (max-width: 420px) {
+    .services-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .franchise-stats { grid-template-columns: 1fr 1fr; }
+    .hero-stats { gap: 12px; }
+    .hero-badge { font-size: 11px; padding: 5px 12px; }
   }
 </style>
 <!-- ===== CLERK AUTH SDK ===== -->
@@ -895,30 +951,44 @@
         <div class="city-item">Tanuku</div>
       </div>
     </div>
-    <ul class="nav-links" id="navLinks">
+    <ul class="nav-links">
       <li><a href="#hero">Home</a></li>
       <li><a href="#services-list">Services</a></li>
       <li><a href="#franchise">Franchise</a></li>
       <li><a href="#contact">Contact</a></li>
-      <li class="nav-divider"></li>
-      <li class="nav-link-action"><button class="btn-sell" onclick="requireLogin('sellModal')">Sell Product</button></li>
-      <li class="nav-link-action"><button class="btn-login" id="accountBtn" onclick="openModal('loginModal')">Account / Login</button></li>
-      <li class="nav-link-action" id="adminNavItem" style="display:none;"><button class="btn-admin" onclick="openAdminPanel()"><i class="fas fa-user-shield"></i> Admin Panel</button></li>
     </ul>
     <div class="nav-actions">
+      <button class="btn-sell" onclick="requireLogin('sellModal')">Sell Product</button>
+      <button class="btn-login" id="accountBtn" onclick="openModal('loginModal')">Account / Login</button>
       <button class="cart-btn" onclick="requireLogin('bookingModal')" id="cartBtn">
         <i class="fas fa-shopping-cart"></i>
         <div class="cart-badge" id="cartCount">0</div>
       </button>
-      <button class="nav-toggle" id="navToggle" aria-label="Toggle menu">
-        <i class="fas fa-bars"></i>
+      <button class="hamburger" id="hamburgerBtn" onclick="openMobileNav()" aria-label="Menu">
+        <span></span><span></span><span></span>
       </button>
     </div>
   </div>
-  <div class="city-branch-banner" id="cityBranchBanner">
-    <i class="fas fa-map-marker-alt"></i> Serviced locally via <strong id="branchName"></strong>. Local manager: <strong id="branchManager"></strong> <span id="branchPhone"></span>
-  </div>
 </nav>
+
+<!-- MOBILE NAV OVERLAY -->
+<div class="mobile-nav-overlay" id="mobileNavOverlay" onclick="closeMobileNav()"></div>
+<div class="mobile-nav-drawer" id="mobileNavDrawer">
+  <div class="mobile-nav-header">
+    <div class="logo">Easy<span style="color:var(--orange)">Fix</span></div>
+    <button class="mobile-nav-close" onclick="closeMobileNav()"><i class="fas fa-times"></i></button>
+  </div>
+  <ul class="mobile-nav-links">
+    <li><a href="#hero" onclick="closeMobileNav()"><i class="fas fa-home" style="width:18px;margin-right:8px;color:var(--blue)"></i>Home</a></li>
+    <li><a href="#services-list" onclick="closeMobileNav()"><i class="fas fa-wrench" style="width:18px;margin-right:8px;color:var(--blue)"></i>Services</a></li>
+    <li><a href="#franchise" onclick="closeMobileNav()"><i class="fas fa-handshake" style="width:18px;margin-right:8px;color:var(--blue)"></i>Franchise</a></li>
+    <li><a href="#contact" onclick="closeMobileNav()"><i class="fas fa-envelope" style="width:18px;margin-right:8px;color:var(--blue)"></i>Contact</a></li>
+  </ul>
+  <div class="mobile-nav-actions">
+    <button class="btn-sell" style="width:100%;text-align:center;padding:12px;" onclick="closeMobileNav();requireLogin('sellModal')">Sell Product</button>
+    <button class="btn-login" style="width:100%;text-align:center;padding:12px;" onclick="closeMobileNav();openModal('loginModal')">Account / Login</button>
+  </div>
+</div>
 
 <!-- HERO -->
 <section id="hero">
@@ -1296,38 +1366,6 @@
   </div>
 </div>
 
-<!-- ===== BRANCH ADMIN MODAL ===== -->
-<div class="modal-overlay" id="branchAdminModal">
-  <div class="modal" style="max-width:560px;">
-    <div class="modal-header">
-      <h3><i class="fas fa-user-shield" style="color:var(--blue);margin-right:8px;"></i>Manage Service Locations</h3>
-      <button class="modal-close" onclick="closeModal('branchAdminModal')"><i class="fas fa-times"></i></button>
-    </div>
-    <div class="modal-body">
-      <p style="font-size:14px;color:var(--gray);margin-bottom:24px;">Add or update the cities EasyFix services, along with the local franchise branch and manager contact shown to customers in that city.</p>
-      <div class="form-group"><label>City Name</label><input type="text" id="branch-city" placeholder="e.g. Bhimavaram"></div>
-      <div class="form-group"><label>Branch Name</label><input type="text" id="branch-name" placeholder="e.g. Bhimavaram Branch"></div>
-      <div class="form-row">
-        <div class="form-group"><label>Local Manager Name</label><input type="text" id="branch-manager" placeholder="e.g. Ramu V."></div>
-        <div class="form-group"><label>Manager Phone</label><input type="tel" id="branch-phone" placeholder="+91 XXXXX XXXXX"></div>
-      </div>
-      <div id="branch-err" style="display:none;color:#ef4444;font-size:13px;margin-bottom:12px;"></div>
-      <div style="display:flex;gap:10px;">
-        <button class="btn-primary" id="branch-submit-btn" style="flex:1;justify-content:center;" onclick="submitBranchForm()">
-          <i class="fas fa-plus"></i> Add Location
-        </button>
-        <button class="btn-secondary" id="branch-cancel-btn" style="display:none;justify-content:center;padding:14px 20px;" onclick="cancelBranchEdit()">
-          Cancel
-        </button>
-      </div>
-      <div class="branch-list" id="branchList">
-        <p class="admin-empty">Loading locations...</p>
-      </div>
-      <p class="admin-note"><i class="fas fa-info-circle"></i> Locations added here appear in the city selector and show the branch/manager banner to customers in that city.</p>
-    </div>
-  </div>
-</div>
-
 <!-- CHATBOT -->
 <button class="chatbot-btn" id="chatbotBtn" onclick="toggleChatbot()">
   <i class="fas fa-comment-dots"></i>
@@ -1375,22 +1413,6 @@ async function sbInsert(table, data) {
 async function sbSelect(table, query) {
   const res = await fetch(`${SB_URL}/${table}?${query}`, {
     method: 'GET', headers: SB_HEADERS
-  });
-  if (!res.ok) { const e = await res.text(); throw new Error(e); }
-  return res.json();
-}
-
-async function sbUpdate(table, query, data) {
-  const res = await fetch(`${SB_URL}/${table}?${query}`, {
-    method: 'PATCH', headers: SB_HEADERS, body: JSON.stringify(data)
-  });
-  if (!res.ok) { const e = await res.text(); throw new Error(e); }
-  return res.json();
-}
-
-async function sbDelete(table, query) {
-  const res = await fetch(`${SB_URL}/${table}?${query}`, {
-    method: 'DELETE', headers: SB_HEADERS
   });
   if (!res.ok) { const e = await res.text(); throw new Error(e); }
   return res.json();
@@ -1470,21 +1492,16 @@ function updateCartSummary() {
 function openBookingModal() { updateCartSummary(); openModal('bookingModal'); }
 
 // ===== MY ORDERS =====
-const ADMIN_EMAILS = ['admin@easyfix.com']; // <-- add the email(s) that should see the Admin Panel
-
 function updateAccountBtn() {
   const btn = document.getElementById('accountBtn');
-  const adminItem = document.getElementById('adminNavItem');
   const user = getCurrentUser();
   if (user) {
     const name = user.user_metadata?.full_name?.split(' ')[0] || user.email?.split('@')[0] || 'Account';
     btn.textContent = `Logout (${name})`;
     btn.setAttribute('onclick', 'doLogout()');
-    adminItem.style.display = ADMIN_EMAILS.includes(user.email) ? '' : 'none';
   } else {
     btn.textContent = 'Account / Login';
     btn.setAttribute('onclick', "openModal('loginModal')");
-    adminItem.style.display = 'none';
   }
 }
 
@@ -2060,202 +2077,11 @@ const citySelector = document.getElementById('citySelector');
 const cityDropdown = document.getElementById('cityDropdown');
 citySelector.addEventListener('click', e => { e.stopPropagation(); cityDropdown.classList.toggle('open'); });
 document.addEventListener('click', () => cityDropdown.classList.remove('open'));
-
-// Local franchise branch info shown when a serviced-via-franchise city is selected.
-// Seeded with defaults below, then overridden/extended from the city_branches table
-// (managed via the Admin Panel).
-let cityBranches = {
-  'Bhimavaram': { branch: 'Bhimavaram Branch', manager: 'Ramu V.', phone: '+91 99999 88888' },
-  'Tanuku': { branch: 'Tanuku Branch', manager: 'Suresh K.', phone: '+91 98765 43210' },
-};
-
-function updateBranchBanner(city) {
-  const banner = document.getElementById('cityBranchBanner');
-  const info = cityBranches[city];
-  if (info) {
-    document.getElementById('branchName').textContent = info.branch;
-    document.getElementById('branchManager').textContent = info.manager;
-    document.getElementById('branchPhone').textContent = `(Ph: ${info.phone})`;
-    banner.classList.add('show');
-  } else {
-    banner.classList.remove('show');
-  }
-}
-
-function ensureCityItem(city) {
-  const exists = [...cityDropdown.querySelectorAll('.city-item')].some(el => el.textContent.trim() === city);
-  if (!exists) {
-    const div = document.createElement('div');
-    div.className = 'city-item';
-    div.textContent = city;
-    cityDropdown.appendChild(div);
-  }
-}
-
-function selectCity(city) {
-  document.getElementById('selectedCity').textContent = city;
-  cityDropdown.classList.remove('open');
-  updateBranchBanner(city);
-}
-
-// Delegated listener so cities added later (via Admin Panel) work without rebinding
-cityDropdown.addEventListener('click', e => {
-  const item = e.target.closest('.city-item');
-  if (!item) return;
-  selectCity(item.textContent.trim());
-});
-
-// Load saved locations/branches from Supabase and merge with the defaults above
-async function loadCityBranches() {
-  try {
-    const rows = await sbSelect('city_branches', 'select=*&order=city.asc');
-    rows.forEach(row => {
-      cityBranches[row.city] = { id: row.id, branch: row.branch_name, manager: row.manager_name, phone: row.phone };
-      ensureCityItem(row.city);
-    });
-  } catch (err) {
-    console.warn('city_branches table not available yet:', err.message);
-  }
-  updateBranchBanner(document.getElementById('selectedCity').textContent.trim());
-  if (document.getElementById('branchAdminModal').classList.contains('active')) renderAdminBranchList();
-}
-loadCityBranches();
-
-// ===== ADMIN: MANAGE SERVICE LOCATIONS / BRANCHES =====
-let editingBranchCity = null;
-
-function openAdminPanel() {
-  cancelBranchEdit();
-  renderAdminBranchList();
-  openModal('branchAdminModal');
-}
-
-function renderAdminBranchList() {
-  const list = document.getElementById('branchList');
-  const cities = Object.keys(cityBranches).sort();
-  if (!cities.length) {
-    list.innerHTML = '<p class="admin-empty">No locations added yet.</p>';
-    return;
-  }
-  list.innerHTML = cities.map(city => {
-    const info = cityBranches[city];
-    const safeCity = city.replace(/'/g, "\\'");
-    return `
-      <div class="branch-row">
-        <div class="branch-row-info">
-          <strong>${city}</strong>
-          ${info.branch} · ${info.manager} · ${info.phone}
-        </div>
-        <div class="branch-row-actions">
-          <button class="icon-btn" onclick="editBranch('${safeCity}')" title="Edit"><i class="fas fa-pen"></i></button>
-          <button class="icon-btn danger" onclick="deleteBranch('${safeCity}')" title="Delete"><i class="fas fa-trash"></i></button>
-        </div>
-      </div>`;
-  }).join('');
-}
-
-function editBranch(city) {
-  const info = cityBranches[city];
-  if (!info) return;
-  editingBranchCity = city;
-  document.getElementById('branch-city').value = city;
-  document.getElementById('branch-name').value = info.branch;
-  document.getElementById('branch-manager').value = info.manager;
-  document.getElementById('branch-phone').value = info.phone;
-  document.getElementById('branch-submit-btn').innerHTML = '<i class="fas fa-check"></i> Update Location';
-  document.getElementById('branch-cancel-btn').style.display = '';
-  document.getElementById('branch-city').focus();
-}
-
-function cancelBranchEdit() {
-  editingBranchCity = null;
-  ['branch-city','branch-name','branch-manager','branch-phone'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('branch-submit-btn').innerHTML = '<i class="fas fa-plus"></i> Add Location';
-  document.getElementById('branch-cancel-btn').style.display = 'none';
-  const err = document.getElementById('branch-err');
-  err.style.display = 'none'; err.textContent = '';
-}
-
-async function submitBranchForm() {
-  const city = document.getElementById('branch-city').value.trim();
-  const branch = document.getElementById('branch-name').value.trim();
-  const manager = document.getElementById('branch-manager').value.trim();
-  const phone = document.getElementById('branch-phone').value.trim();
-  const err = document.getElementById('branch-err');
-  err.style.display = 'none'; err.textContent = '';
-
-  if (!city || !branch || !manager || !phone) {
-    err.textContent = 'Please fill in all fields.';
-    err.style.display = 'block';
-    return;
-  }
-
-  const payload = { city, branch_name: branch, manager_name: manager, phone };
-  const btn = document.getElementById('branch-submit-btn');
-  const wasEditing = editingBranchCity;
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-
-  try {
-    const editTarget = wasEditing ? cityBranches[wasEditing] : null;
-    const sameCityExisting = cityBranches[city];
-
-    if (editTarget && editTarget.id) {
-      await sbUpdate('city_branches', `id=eq.${editTarget.id}`, payload);
-      if (wasEditing !== city) delete cityBranches[wasEditing];
-    } else if (sameCityExisting && sameCityExisting.id) {
-      await sbUpdate('city_branches', `id=eq.${sameCityExisting.id}`, payload);
-    } else {
-      await sbInsert('city_branches', payload);
-      if (wasEditing && wasEditing !== city) delete cityBranches[wasEditing];
-    }
-    const wasEditingMode = !!wasEditing;
-    cancelBranchEdit();
-    await loadCityBranches();
-    renderAdminBranchList();
-    showToast(wasEditingMode ? '✅ Location updated' : '✅ Location added');
-  } catch (e) {
-    err.textContent = /duplicate/i.test(e.message) ? 'This city already exists. Use Edit to update it instead.' : ('Could not save location: ' + e.message);
-    err.style.display = 'block';
-  } finally {
-    btn.disabled = false;
-    if (!editingBranchCity) btn.innerHTML = '<i class="fas fa-plus"></i> Add Location';
-  }
-}
-
-async function deleteBranch(city) {
-  const info = cityBranches[city];
-  if (!info) return;
-  if (!confirm(`Remove the local branch info for ${city}?`)) return;
-  try {
-    if (info.id) await sbDelete('city_branches', `id=eq.${info.id}`);
-    delete cityBranches[city];
-    renderAdminBranchList();
-    updateBranchBanner(document.getElementById('selectedCity').textContent.trim());
-    showToast('🗑️ Location removed');
-  } catch (e) {
-    showToast('Could not remove location: ' + e.message);
-  }
-}
-
-// Mobile nav toggle
-const navToggle = document.getElementById('navToggle');
-const navLinks = document.getElementById('navLinks');
-const navToggleIcon = navToggle.querySelector('i');
-function closeNavMenu() {
-  navLinks.classList.remove('open');
-  navToggleIcon.className = 'fas fa-bars';
-}
-navToggle.addEventListener('click', e => {
-  e.stopPropagation();
-  const isOpen = navLinks.classList.toggle('open');
-  navToggleIcon.className = isOpen ? 'fas fa-times' : 'fas fa-bars';
-});
-navLinks.querySelectorAll('a, button').forEach(el => {
-  el.addEventListener('click', closeNavMenu);
-});
-document.addEventListener('click', e => {
-  if (!navLinks.contains(e.target) && !navToggle.contains(e.target)) closeNavMenu();
+cityDropdown.querySelectorAll('.city-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.getElementById('selectedCity').textContent = item.textContent;
+    cityDropdown.classList.remove('open');
+  });
 });
 
 // Chatbot
@@ -2278,6 +2104,18 @@ function addMessage(text,role) {
   div.className = `chat-msg ${role}`;
   div.innerHTML = `<div class="chat-bubble">${text}</div>`;
   msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight;
+}
+
+// Mobile nav
+function openMobileNav() {
+  document.getElementById('mobileNavDrawer').classList.add('open');
+  document.getElementById('mobileNavOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeMobileNav() {
+  document.getElementById('mobileNavDrawer').classList.remove('open');
+  document.getElementById('mobileNavOverlay').classList.remove('open');
+  document.body.style.overflow = '';
 }
 
 renderServices();
